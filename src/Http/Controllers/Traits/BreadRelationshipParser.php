@@ -107,13 +107,18 @@ trait BreadRelationshipParser
 
         if (!empty($relations) && array_filter($relations)) {
             foreach ($relations as $field => $relation) {
+                $original_field_name = $field;
                 if (isset($this->relation_field[$field])) {
                     $field = $this->relation_field[$field];
                 } else {
                     $field = snake_case($field);
                 }
 
-                $bread_data = $dataType->browseRows->where('field', $field)->first();
+                if (empty($bread_data = $dataType->browseRows->where('field', $field)->first())) {
+                    $field = $original_field_name;
+                    $bread_data = $dataType->browseRows->where('field', $field)->first();
+                }
+
                 $relationData = json_decode($bread_data->details)->relationship;
 
                 if ($bread_data->type == 'select_multiple') {
