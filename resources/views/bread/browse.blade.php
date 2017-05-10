@@ -114,16 +114,10 @@
 
                                                 @if($data->{$row->field . '_page_slug'})
                                                     <a href="{{ $data->{$row->field . '_page_slug'} }}">
-                                                        @if(property_exists($options->options, ($data->{$row->field} ?: "_empty_")))
-                                                            {!! $options->options->{($data->{$row->field} ?: "_empty_")} !!}
-                                                        @else
-                                                            {!! $data->{$row->field} !!}
-                                                        @endif
+                                                        {!! property_exists($options->options, ($data->{$row->field} ?: "_empty_")) ? $options->options->{($data->{$row->field} ?: "_empty_")} : $data->{$row->field} !!}
                                                     </a>
-                                                @elseif(property_exists($options->options, ($data->{$row->field} ?: "_empty_")))
-                                                    {!! $options->options->{($data->{$row->field} ?: "_empty_")} !!}
                                                 @else
-                                                    {!! $data->{$row->field} !!}
+                                                        {!! property_exists($options->options, ($data->{$row->field} ?: "_empty_")) ? $options->options->{($data->{$row->field} ?: "_empty_")} : $data->{$row->field} !!}
                                                 @endif
 
 
