@@ -1,11 +1,17 @@
 @if(isset($options->relationship))
 
+    @php
+        $relationship_method = property_exists( $options->relationship, 'method' ) ? $options->relationship->method : camel_case($row->field);
+    @endphp
+
     {{-- If this is a relationship and the method does not exist, show a warning message --}}
     @if( !method_exists( $dataType->model_name, camel_case($row->field) ) )
         <p class="label label-warning"><i class="voyager-warning"></i> {{ __('voyager.form.field_select_dd_relationship', ['method' => camel_case($row->field).'()', 'class' => $dataType->model_name]) }}</p>
     @endif
 
-    @if( method_exists( $dataType->model_name, camel_case($row->field) ) )
+
+
+    @if( method_exists( $dataType->model_name, $relationship_method ) )
         @if(isset($dataTypeContent->{$row->field}) && !is_null(old($row->field, $dataTypeContent->{$row->field})))
             <?php $selected_value = old($row->field, $dataTypeContent->{$row->field}); ?>
         @else
@@ -24,7 +30,7 @@
             @endif
             {{-- Populate all options from relationship --}}
             <?php
-            $relationshipListMethod = camel_case($row->field) . 'List';
+            $relationshipListMethod = $relationship_method . 'List';
             if (method_exists($dataTypeContent, $relationshipListMethod)) {
                 $relationshipOptions = $dataTypeContent->$relationshipListMethod();
             } else {
