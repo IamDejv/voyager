@@ -170,9 +170,17 @@ class Voyager
         $parts = explode('.', $key);
 
         if (count($parts) == 2) {
-            return @$this->setting_cache[$parts[0]][$parts[1]] ?: $default;
+            $setting = @$this->setting_cache[$parts[0]][$parts[1]];
+            if (is_array($setting)) {
+                $setting = array_pop($setting);
+            }
+            return $setting ?: $default;
         } else {
-            return @$this->setting_cache[$parts[0]] ?: $default;
+            $setting = @$this->setting_cache[$parts[0]];
+            if (is_array($setting)) {
+                $setting = array_pop($setting);
+            }
+            return $setting ?: $default;
         }
     }
 
