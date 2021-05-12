@@ -9,20 +9,20 @@ class VoyagerMenuController extends Controller
 {
     public function builder($id)
     {
-        Voyager::canOrFail('edit_menus');
-
         $menu = Voyager::model('Menu')->findOrFail($id);
+
+        $this->authorize('edit', $menu);
 
         $isModelTranslatable = is_bread_translatable(Voyager::model('MenuItem'));
 
-        return view('voyager::menus.builder', compact('menu', 'isModelTranslatable'));
+        return Voyager::view('voyager::menus.builder', compact('menu', 'isModelTranslatable'));
     }
 
     public function delete_menu($menu, $id)
     {
-        Voyager::canOrFail('delete_menus');
-
         $item = Voyager::model('MenuItem')->findOrFail($id);
+
+        $this->authorize('delete', $item->menu);
 
         $item->deleteAttributeTranslation('title');
 
@@ -31,29 +31,23 @@ class VoyagerMenuController extends Controller
         return redirect()
             ->route('voyager.menus.builder', [$menu])
             ->with([
-                'message'    => 'Successfully Deleted Menu Item.',
+                'message'    => __('voyager.menu_builder.successfully_deleted'),
                 'alert-type' => 'success',
             ]);
     }
 
     public function add_item(Request $request)
     {
-        Voyager::canOrFail('add_menus');
+        $menu = Voyager::model('Menu');
+
+        $this->authorize('add', $menu);
 
         $data = $this->prepareParameters(
             $request->all()
         );
 
         unset($data['id']);
-        $data['order'] = 1;
-
-        $highestOrderMenuItem = Voyager::model('MenuItem')->where('parent_id', '=', null)
-            ->orderBy('order', 'DESC')
-            ->first();
-
-        if (!is_null($highestOrderMenuItem)) {
-            $data['order'] = intval($highestOrderMenuItem->order) + 1;
-        }
+        $data['order'] = Voyager::model('MenuItem')->highestOrderMenuItem();
 
         // Check if is translatable
         $_isTranslatable = is_bread_translatable(Voyager::model('MenuItem'));
@@ -72,21 +66,21 @@ class VoyagerMenuController extends Controller
         return redirect()
             ->route('voyager.menus.builder', [$data['menu_id']])
             ->with([
-                'message'    => 'Successfully Created New Menu Item.',
+                'message'    => __('voyager.menu_builder.successfully_created'),
                 'alert-type' => 'success',
             ]);
     }
 
     public function update_item(Request $request)
     {
-        Voyager::canOrFail('edit_menus');
-
         $id = $request->input('id');
         $data = $this->prepareParameters(
             $request->except(['id'])
         );
 
         $menuItem = Voyager::model('MenuItem')->findOrFail($id);
+
+        $this->authorize('edit', $menuItem->menu);
 
         if (is_bread_translatable($menuItem)) {
             $trans = $this->prepareMenuTranslations($data);
@@ -100,7 +94,7 @@ class VoyagerMenuController extends Controller
         return redirect()
             ->route('voyager.menus.builder', [$menuItem->menu_id])
             ->with([
-                'message'    => 'Successfully Updated Menu Item.',
+                'message'    => __('voyager.menu_builder.successfully_updated'),
                 'alert-type' => 'success',
             ]);
     }

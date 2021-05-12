@@ -8,7 +8,24 @@ use TCG\Voyager\Models\DataType;
 
 trait BreadRelationshipParser
 {
-    protected $patchId;
+    protected $relation_field = [];
+
+    protected function removeRelationshipField(DataType $dataType, $bread_type = 'browse')
+    {
+        $forget_keys = [];
+        foreach ($dataType->{$bread_type.'Rows'} as $key => $row) {
+            if ($row->type == 'relationship') {
+                $options = json_decode($row->details);
+                $relationshipField = @$options->column;
+                $keyInCollection = key($dataType->{$bread_type.'Rows'}->where('field', '=', $relationshipField)->toArray());
+                array_push($forget_keys, $keyInCollection);
+            }
+        }
+
+        foreach ($forget_keys as $forget_key) {
+            $dataType->{$bread_type.'Rows'}->forget($forget_key);
+        }
+    }
 
     /**
      * Build the relationships array for the model's eager load.
@@ -27,19 +44,18 @@ trait BreadRelationshipParser
                 $relation = $details->relationship;
                 if (isset($relation->method)) {
                     $method = $relation->method;
-                    $this->patchId[$method] = true;
+                    $this->relation_field[$method] = $item->field;
                 } else {
                     $method = camel_case($item->field);
-                    $this->patchId[$method] = false;
-                }
-
-                if (strpos($relation->key, '.') > 0) {
-                    $this->patchId[$method] = false;
                 }
 
                 $relationships[$method] = function ($query) use ($relation) {
                     // select only what we need
-                    $query->select($relation->key, $relation->label);
+                    if (isset($relation->method)) {
+                        return $query;
+                    } else {
+                        $query->select($relation->key, $relation->label);
+                    }
                 };
             }
         });
@@ -91,13 +107,18 @@ trait BreadRelationshipParser
 
         if (!empty($relations) && array_filter($relations)) {
             foreach ($relations as $field => $relation) {
+                $original_field_name = $field;
                 if ($this->patchId[$field]) {
                     $field = snake_case($field).'_id';
                 } else {
                     $field = snake_case($field);
                 }
 
-                $bread_data = $dataType->browseRows->where('field', $field)->first();
+                if (empty($bread_data = $dataType->browseRows->where('field', $field)->first())) {
+                    $field = $original_field_name;
+                    $bread_data = $dataType->browseRows->where('field', $field)->first();
+                }
+
                 $relationData = json_decode($bread_data->details)->relationship;
 
                 if ($bread_data->type == 'select_multiple') {
@@ -121,7 +142,7 @@ trait BreadRelationshipParser
                     $tmp = $item[$field];
                     $item[$field] = $tmp;
                 }
-                if (isset($relationData->page_slug)) {
+                if (isset($relationData->page_slug) && $relation) {
                     $id = $relation->id;
                     $item[$field.'_page_slug'] = url($relationData->page_slug, $id);
                 }

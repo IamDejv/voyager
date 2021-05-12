@@ -1,5 +1,7 @@
 <?php
 
+use TCG\Voyager\Events\Routing;
+use TCG\Voyager\Events\RoutingAdmin;
 use TCG\Voyager\Models\DataType;
 
 /*
@@ -13,15 +15,20 @@ use TCG\Voyager\Models\DataType;
 */
 
 Route::group(['as' => 'voyager.'], function () {
-    event('voyager.routing', app('router'));
+    event(new Routing());
 
     $namespacePrefix = '\\'.config('voyager.controllers.namespace').'\\';
 
     Route::get('login', ['uses' => $namespacePrefix.'VoyagerAuthController@login',     'as' => 'login']);
     Route::post('login', ['uses' => $namespacePrefix.'VoyagerAuthController@postLogin', 'as' => 'postlogin']);
 
+    Route::post('password/email', ['uses' => $namespacePrefix.'VoyagerForgotPasswordController@sendResetLinkEmail', 'as' => 'password_email']);
+    Route::post('password/reset', ['uses' => $namespacePrefix.'VoyagerResetPasswordController@reset', 'as' => 'password_reset']);
+    Route::get('password/reset', ['uses' => $namespacePrefix.'VoyagerForgotPasswordController@showLinkRequestForm', 'as' => 'password_request_form']);
+    Route::get('password/reset/{token}', ['uses' => $namespacePrefix.'VoyagerResetPasswordController@showResetForm', 'as' => 'password_reset_form']);
+
     Route::group(['middleware' => 'admin.user'], function () use ($namespacePrefix) {
-        event('voyager.admin.routing', app('router'));
+        event(new RoutingAdmin());
 
         // Main Admin and Logout Route
         Route::get('/', ['uses' => $namespacePrefix.'VoyagerController@index',   'as' => 'dashboard']);
@@ -93,6 +100,7 @@ Route::group(['as' => 'voyager.'], function () {
             Route::post('rename_file', ['uses' => $namespacePrefix.'VoyagerMediaController@rename_file',        'as' => 'rename_file']);
             Route::post('upload', ['uses' => $namespacePrefix.'VoyagerMediaController@upload',             'as' => 'upload']);
             Route::post('remove', ['uses' => $namespacePrefix.'VoyagerMediaController@remove',             'as' => 'remove']);
+            Route::post('crop', ['uses' => $namespacePrefix.'VoyagerMediaController@crop',             'as' => 'crop']);
         });
 
         // Database Routes
@@ -105,6 +113,17 @@ Route::group(['as' => 'voyager.'], function () {
             Route::get('{table}/bread/edit', ['uses' => $namespacePrefix.'VoyagerDatabaseController@addEditBread', 'as' => 'edit']);
             Route::put('bread/{id}', ['uses' => $namespacePrefix.'VoyagerDatabaseController@updateBread',  'as' => 'update']);
             Route::delete('bread/{id}', ['uses' => $namespacePrefix.'VoyagerDatabaseController@deleteBread',  'as' => 'delete']);
+            Route::post('bread/relationship', ['uses' => $namespacePrefix.'VoyagerDatabaseController@addRelationship',  'as' => 'relationship']);
+            Route::get('bread/delete_relationship/{id}', ['uses' => $namespacePrefix.'VoyagerDatabaseController@deleteRelationship',  'as' => 'delete_relationship']);
+        });
+
+        // Compass Routes
+        Route::group([
+            'as'     => 'compass.',
+            'prefix' => 'compass',
+        ], function () use ($namespacePrefix) {
+            Route::get('/', ['uses' => $namespacePrefix.'VoyagerCompassController@index',  'as' => 'index']);
+            Route::post('/', ['uses' => $namespacePrefix.'VoyagerCompassController@index',  'as' => 'post']);
         });
 
         Route::resource('database', $namespacePrefix.'VoyagerDatabaseController');

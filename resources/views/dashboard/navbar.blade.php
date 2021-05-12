@@ -4,25 +4,21 @@
             <button class="hamburger btn-link">
                 <span class="hamburger-inner"></span>
             </button>
-            <a id="sidebar-anchor" class="voyager-anchor btn-link navbar-link hidden-xs" 
-                title="Yarr! Drop the anchors! (and keep the sidebar open)" 
-                data-unstick="Unstick the sidebar" 
-            data-toggle="tooltip" data-placement="bottom"></a>
 
             <ol class="breadcrumb hidden-xs">
                 @if(count(Request::segments()) == 1)
-                    <li class="active"><i class="voyager-boat"></i> Dashboard</li>
+                    <li class="active"><i class="voyager-boat"></i> {{ __('voyager.generic.dashboard') }}</li>
                 @else
                     <li class="active">
-                        <a href="{{ route('voyager.dashboard')}}"><i class="voyager-boat"></i> Dashboard</a>
+                        <a href="{{ route('voyager.dashboard')}}"><i class="voyager-boat"></i> {{ __('voyager.generic.dashboard') }}</a>
                     </li>
                 @endif
-                <?php $breadcrumb_url = ''; ?>
+                <?php $breadcrumb_url = url(''); ?>
                 @for($i = 1; $i <= count(Request::segments()); $i++)
                     <?php $breadcrumb_url .= '/' . Request::segment($i); ?>
                     @if(Request::segment($i) != ltrim(route('voyager.dashboard', [], false), '/') && !is_numeric(Request::segment($i)))
 
-                        @if($i < count(Request::segments()) & $i > 0)
+                        @if($i < count(Request::segments()) & $i > 0 && array_search('database',Request::segments())===false)
                             <li class="active"><a
                                         href="{{ $breadcrumb_url }}">{{ ucwords(str_replace('-', ' ', str_replace('_', ' ', Request::segment($i)))) }}</a>
                             </li>
